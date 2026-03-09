@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?<slug>[^\\.]+)\\.localio\\.com"
+        }
+      ],
+      "destination": "/p/:slug/:path*"
+    }
+  ]
+}

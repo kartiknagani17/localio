@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "localsiteai",
+      "runtimeExecutable": "E:\\node.exe",
+      "runtimeArgs": ["E:\\npm", "run", "dev"],
+      "port": 3001
+    }
+  ]
+}
