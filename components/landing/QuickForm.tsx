@@ -171,7 +171,7 @@ export default function QuickForm({ onClose }: QuickFormProps) {
     }
   };
 
-  if (isGenerating) return <GeneratingScreen />;
+  if (isGenerating) return <GeneratingScreen businessName={businessName.trim() || undefined} />;
 
   const progress    = ((step + 1) / 3) * 100;
   const cfg         = STEP_CONFIG[step];

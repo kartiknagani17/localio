@@ -99,21 +99,19 @@ export default function ChooseThemeClient({
   const [selectedId, setSelectedId]     = useState(recommendedId);
   const [isNavigating, setIsNavigating] = useState(false);
 
-  const handleContinue = async () => {
+  const handleContinue = () => {
     setIsNavigating(true);
-    try {
-      // Only patch if the user changed from the AI-recommended template
-      if (selectedId !== recommendedId) {
-        await fetch(`/api/update/${siteId}`, {
-          method:  'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ template_id: selectedId }),
-        });
-      }
-      router.push(`/preview/${siteId}`);
-    } catch {
-      setIsNavigating(false);
+    // Fire PATCH in the background — no await so navigation is instant.
+    // The preview page reads the selected template from the ?t= URL param
+    // immediately, so the correct theme shows regardless of DB write timing.
+    if (selectedId !== recommendedId) {
+      fetch(`/api/update/${siteId}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ template_id: selectedId }),
+      }).catch(console.error);
     }
+    router.push(`/preview/${siteId}?t=${encodeURIComponent(selectedId)}`);
   };
 
   return (
