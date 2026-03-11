@@ -1,5 +1,5 @@
 'use client';
-
+// trigger redeploy — picks up updated NEXT_PUBLIC_SITE_DOMAIN env var
 import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import PaymentModal from '@/components/preview/PaymentModal';
