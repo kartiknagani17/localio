@@ -4,20 +4,11 @@ import { useState, useEffect, useRef } from 'react';
 import GeneratingScreen from './GeneratingScreen';
 
 const BUSINESS_TYPES = [
-  { value: 'car_detailer',  label: 'Car Detailer'  },
-  { value: 'hair_salon',    label: 'Hair Salon'    },
-  { value: 'barbershop',    label: 'Barbershop'    },
-  { value: 'restaurant',    label: 'Restaurant'    },
-  { value: 'cafe',          label: 'Café'          },
   { value: 'plumber',       label: 'Plumber'       },
   { value: 'electrician',   label: 'Electrician'   },
+  { value: 'hair_salon',    label: 'Hair Salon'    },
+  { value: 'car_detailer',  label: 'Car Detailer'  },
   { value: 'landscaper',    label: 'Landscaper'    },
-  { value: 'contractor',    label: 'Contractor'    },
-  { value: 'gym',           label: 'Gym / Fitness' },
-  { value: 'yoga_studio',   label: 'Yoga / Pilates'},
-  { value: 'cleaner',       label: 'Cleaning'      },
-  { value: 'spa',           label: 'Spa / Massage' },
-  { value: 'dentist',       label: 'Dentist'       },
   { value: 'other',         label: 'Other'         },
 ];
 
@@ -89,7 +80,7 @@ const STEP_CONFIG: StepConfig[] = [
   {
     stepLabel: 'Step 3 of 3',
     title: 'What type of business do you run?',
-    subtitle: "Pick the closest match — we'll design everything around your industry.",
+    subtitle: "Pick your industry — we have dedicated templates for each one.",
   },
 ];
 
@@ -405,14 +396,21 @@ export default function QuickForm({ onClose }: QuickFormProps) {
                 </div>
 
                 {businessType === 'other' && (
-                  <input
-                    type="text"
-                    value={otherText}
-                    onChange={e => setOtherText(e.target.value)}
-                    placeholder="e.g. Pet Grooming"
-                    className="input-field"
-                    style={{ marginTop: 12 }}
-                  />
+                  <div style={{ marginTop: 12 }}>
+                    <input
+                      type="text"
+                      value={otherText}
+                      onChange={e => { setOtherText(e.target.value); setError(null); }}
+                      onKeyDown={e => e.key === 'Enter' && next()}
+                      placeholder="e.g. Pet Grooming, Nail Salon…"
+                      className="input-field"
+                      autoFocus
+                    />
+                    <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8, lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: 5 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8581A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      You&apos;ll be able to choose from all of our available templates on the next step.
+                    </p>
+                  </div>
                 )}
               </div>
             )}
