@@ -30,32 +30,7 @@ export async function extractBusinessData(
     .replace(/```\s*$/i, '')
     .trim();
 
-  let parsed: BusinessData;
-  try {
-    parsed = JSON.parse(clean) as BusinessData;
-  } catch {
-    // Often Gemini truncates mid-string or mid-object; try to close and parse
-    const trimmed = clean.trimEnd();
-    const repairs = [
-      trimmed + (trimmed.endsWith('"') ? '}' : '"}' ),
-      trimmed.replace(/,+\s*$/, '') + '}',
-    ];
-    let lastErr: Error | null = null;
-    for (const repaired of repairs) {
-      try {
-        parsed = JSON.parse(repaired) as BusinessData;
-        lastErr = null;
-        break;
-      } catch (e) {
-        lastErr = e instanceof Error ? e : new Error(String(e));
-      }
-    }
-    if (lastErr) {
-      throw new Error(
-        `Gemini returned invalid JSON. Preview: ${clean.slice(0, 300)}`
-      );
-    }
-  }
+  const parsed: BusinessData = parseOrRepair(clean);
 
   parsed.name         = parsed.name         || raw.businessName;
   parsed.businessType = parsed.businessType || raw.businessType;
@@ -79,6 +54,29 @@ export async function extractBusinessData(
   }));
 
   return parsed;
+}
+
+function parseOrRepair(clean: string): BusinessData {
+  try {
+    return JSON.parse(clean) as BusinessData;
+  } catch {
+    // Gemini sometimes truncates mid-string/object — attempt quick repairs
+    const trimmed = clean.trimEnd();
+    const repairs = [
+      trimmed + (trimmed.endsWith('"') ? '}' : '"}'),
+      trimmed.replace(/,+\s*$/, '') + '}',
+    ];
+    for (const repaired of repairs) {
+      try {
+        return JSON.parse(repaired) as BusinessData;
+      } catch {
+        // try next repair
+      }
+    }
+    throw new Error(
+      `Gemini returned invalid JSON. Preview: ${clean.slice(0, 300)}`
+    );
+  }
 }
 
 function buildPrompt(raw: ExtractInput): string {
