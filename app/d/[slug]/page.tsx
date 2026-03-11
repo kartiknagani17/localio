@@ -2,7 +2,10 @@ import { createServerClient } from '@/lib/supabase/server';
 import { getTemplateSafe } from '@/templates/registry';
 import { SiteRow } from '@/templates/types';
 
-export default async function PublicSitePage({
+// Draft preview site — localio.live/d/[slug]
+// Visible before publishing so the owner can share a live preview with clients.
+// Once published the canonical URL becomes localio.live/[slug].
+export default async function DraftSitePage({
   params,
 }: {
   params: { slug: string };
@@ -14,14 +17,14 @@ export default async function PublicSitePage({
     .from('sites')
     .select('*')
     .eq('slug', slug)
-    .eq('status', 'published')
+    .eq('status', 'preview')
     .single<SiteRow>();
 
   if (!site) {
     return (
       <div style={{ padding: 48, textAlign: 'center' }}>
-        <h1>Site not found</h1>
-        <p>This website has not been published yet or does not exist.</p>
+        <h1>Draft not found</h1>
+        <p>This draft does not exist or has already been published.</p>
       </div>
     );
   }
@@ -30,8 +33,6 @@ export default async function PublicSitePage({
   const TemplateComponent = template.component;
 
   return (
-    /* container-type: inline-size gives @container rules a containing block
-       on the public site, so they behave exactly like @media queries here. */
     <div style={{ width: '100%', containerType: 'inline-size' } as React.CSSProperties}>
       <TemplateComponent businessData={site.business_data} />
     </div>

@@ -90,8 +90,8 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const domain = process.env.NEXT_PUBLIC_SITE_DOMAIN ?? 'localio.com';
-    const publicUrl = `https://${site.slug}.${domain}`;
+    const domain = process.env.NEXT_PUBLIC_SITE_DOMAIN ?? 'localio.live';
+    const publicUrl = `https://${domain}/${site.slug}`;
 
     return NextResponse.json({ publicUrl, slug: site.slug });
   } catch (err: unknown) {

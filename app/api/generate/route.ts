@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { extractBusinessData } from '@/lib/gemini/extract';
 import { selectTemplate } from '@/lib/gemini/selectTemplate';
-import { uniqueSlug } from '@/lib/slugify';
+import { generateUniqueSlug } from '@/lib/slugify';
 import { QuickFormData } from '@/templates/types';
 
 export async function POST(req: NextRequest) {
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     });
 
     const templateId = selectTemplate(businessData);
-    const slug = uniqueSlug(businessData.name);
+    const slug = await generateUniqueSlug(businessData.name, supabase);
 
     const { data: site, error: dbError } = await supabase
       .from('sites')
