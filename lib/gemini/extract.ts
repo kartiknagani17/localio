@@ -47,12 +47,15 @@ export async function extractBusinessData(
 
   // Normalise testimonials: Gemini sometimes returns { review, quote, message }
   // instead of the required { text } field. Map any known alias → text.
-  parsed.testimonials = parsed.testimonials.map((t: Record<string, unknown>): Testimonial => ({
-    name:    (t.name    as string) || '',
-    text:    (t.text    as string) || (t.review as string) || (t.quote as string) || (t.message as string) || '',
-    rating:  (t.rating  as number) ?? 5,
-    context: (t.context as string) || undefined,
-  }));
+  // Cast the array to unknown[] first so TypeScript allows us to re-type each element.
+  parsed.testimonials = (parsed.testimonials as unknown as Record<string, unknown>[]).map(
+    (t): Testimonial => ({
+      name:    (t.name    as string) || '',
+      text:    (t.text    as string) || (t.review as string) || (t.quote as string) || (t.message as string) || '',
+      rating:  (t.rating  as number) ?? 5,
+      context: (t.context as string) || undefined,
+    })
+  );
 
   return parsed;
 }
