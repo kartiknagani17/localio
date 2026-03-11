@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { BusinessData, SiteCopy } from '@/templates/types';
+import { BusinessData, SiteCopy, Testimonial } from '@/templates/types';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -47,10 +47,11 @@ export async function extractBusinessData(
 
   // Normalise testimonials: Gemini sometimes returns { review, quote, message }
   // instead of the required { text } field. Map any known alias → text.
-  parsed.testimonials = parsed.testimonials.map((t: Record<string, unknown>) => ({
-    ...t,
-    text:   (t.text   as string) || (t.review as string) || (t.quote as string) || (t.message as string) || '',
-    rating: (t.rating as number) ?? 5,
+  parsed.testimonials = parsed.testimonials.map((t: Record<string, unknown>): Testimonial => ({
+    name:    (t.name    as string) || '',
+    text:    (t.text    as string) || (t.review as string) || (t.quote as string) || (t.message as string) || '',
+    rating:  (t.rating  as number) ?? 5,
+    context: (t.context as string) || undefined,
   }));
 
   return parsed;
