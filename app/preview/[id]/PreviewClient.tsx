@@ -255,6 +255,7 @@ export default function PreviewClient({
             slug={slug}
             status={status}
             templateName={displayTemplateName}
+            businessName={data.name}
           />
         </div>
 

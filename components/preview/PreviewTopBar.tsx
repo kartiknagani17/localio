@@ -1,67 +1,44 @@
 'use client';
-// trigger redeploy — picks up updated NEXT_PUBLIC_SITE_DOMAIN env var
 import { useState } from 'react';
 import Button from '@/components/ui/Button';
-import PaymentModal from '@/components/preview/PaymentModal';
+import PublishFlowDialog from '@/components/preview/PublishFlowDialog';
 
 interface PreviewTopBarProps {
-  siteId: string;
-  slug: string;
-  status: 'preview' | 'published';
+  siteId:       string;
+  slug:         string;
+  status:       'preview' | 'published';
   templateName: string;
+  businessName: string;
 }
 
-export default function PreviewTopBar({ siteId, slug, status, templateName }: PreviewTopBarProps) {
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [isPublishing, setIsPublishing]         = useState(false);
-  const [publishedUrl, setPublishedUrl]         = useState<string | null>(null);
-  const [copySuccess, setCopySuccess]           = useState(false);
+export default function PreviewTopBar({
+  siteId,
+  slug,
+  status,
+  templateName,
+  businessName,
+}: PreviewTopBarProps) {
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [publishedUrl, setPublishedUrl]           = useState<string | null>(null);
+  const [copySuccess, setCopySuccess]             = useState(false);
 
   const domain = process.env.NEXT_PUBLIC_SITE_DOMAIN ?? 'localio.live';
 
-  // True if already published (from server) OR just published in this session
   const isPublished = status === 'published' || !!publishedUrl;
 
-  // Resolved published URL:
-  //   - Set by the publish API response after publishing in this session, OR
-  //   - Derived from slug if the server already knows it's published
   const resolvedPublishedUrl =
     publishedUrl ?? (status === 'published' ? `https://${domain}/${slug}` : null);
 
-  // Draft shareable URL — always available before publishing
-  const draftUrl = `https://${domain}/d/${slug}`;
-
-  // Active URL — published URL takes precedence once available
-  const activeUrl    = resolvedPublishedUrl ?? draftUrl;
-  const urlDisplay   = activeUrl.replace('https://', '');
-
-  const handlePublish = async (subscriptionId: string) => {
-    setIsPublishing(true);
-    try {
-      const res = await fetch(`/api/publish/${siteId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscriptionId }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Publish failed');
-      setPublishedUrl(data.publicUrl);
-    } catch (err) {
-      console.error(err);
-      alert(err instanceof Error ? err.message : 'Publish failed');
-    } finally {
-      setIsPublishing(false);
-    }
-  };
+  const draftUrl  = `https://${domain}/d/${slug}`;
+  const activeUrl = resolvedPublishedUrl ?? draftUrl;
+  const urlDisplay = activeUrl.replace('https://', '');
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(activeUrl);
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
-    } catch {
-      // ignore — clipboard may be unavailable in some browsers
-    }
+    } catch { /* ignore */ }
   };
 
   return (
@@ -71,9 +48,11 @@ export default function PreviewTopBar({ siteId, slug, status, templateName }: Pr
 
       <div className="flex-1" />
 
-      {/* URL display — draft or published */}
-      <span className={`text-sm font-mono ${isPublished ? 'text-green-600' : 'text-gray-400'}`}>
-        {isPublished ? '' : <span className="mr-1 px-1 py-0.5 text-xs bg-amber-100 text-amber-700 rounded font-sans">Draft</span>}
+      {/* URL display */}
+      <span className={`text-sm font-mono hidden sm:block ${isPublished ? 'text-green-600' : 'text-gray-400'}`}>
+        {!isPublished && (
+          <span className="mr-1 px-1 py-0.5 text-xs bg-amber-100 text-amber-700 rounded font-sans">Draft</span>
+        )}
         {urlDisplay}
       </span>
 
@@ -82,28 +61,36 @@ export default function PreviewTopBar({ siteId, slug, status, templateName }: Pr
         href={activeUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className={`text-sm hover:underline ${isPublished ? 'text-green-600' : 'text-gray-400'}`}
+        className={`text-sm hover:underline hidden sm:block ${isPublished ? 'text-green-600' : 'text-gray-400'}`}
       >
         Open ↗
       </a>
 
-      {/* Copy URL — always available */}
+      {/* Copy URL */}
       <Button variant="secondary" onClick={handleCopy}>
         {copySuccess ? 'Copied!' : 'Copy URL'}
       </Button>
 
       {/* Publish button */}
       <Button
-        onClick={() => (!isPublished ? setShowPaymentModal(true) : undefined)}
-        disabled={isPublished || isPublishing}
+        onClick={() => { if (!isPublished) setShowPublishDialog(true); }}
+        disabled={isPublished}
+        className={isPublished ? '!bg-green-500 hover:!bg-green-500 cursor-default' : ''}
       >
-        {isPublished ? 'Published ✓' : isPublishing ? 'Publishing…' : 'Publish'}
+        {isPublished ? '✓ Published' : 'Publish'}
       </Button>
 
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        onSuccess={(subscriptionId) => handlePublish(subscriptionId)}
+      {/* Full publish flow: auth → confirm → PayPal → success */}
+      <PublishFlowDialog
+        isOpen={showPublishDialog}
+        onClose={() => setShowPublishDialog(false)}
+        siteId={siteId}
+        businessName={businessName}
+        slug={slug}
+        onPublished={(url) => {
+          setPublishedUrl(url);
+          // dialog closes itself on success via "Back to editor" button
+        }}
       />
     </header>
   );

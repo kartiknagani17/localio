@@ -1,4 +1,4 @@
-import Landscaper5 from '@/templates/Landscaper5';
+import Landscaper5 from '@/templates/landscaper/Landscaper5';
 import type { BusinessData } from '@/templates/types';
 
 const MOCK: BusinessData = {

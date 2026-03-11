@@ -1,29 +1,41 @@
 // templates/registry.ts
 //
-// This is the template registry. It starts with only the placeholder.
-// Real templates are added here in a future phase.
-// When a template is added:
-//   1. Create the component at templates/{TemplateName}/index.tsx
+// Single source of truth for all templates.
+//
+// Folder convention — templates are organised by business type:
+//   templates/{businessType}/{TemplateName}/index.tsx
+//   e.g. templates/plumber/Plumber1/index.tsx
+//        templates/car-detailer/CarDetailing/index.tsx
+//
+// When adding a NEW template:
+//   1. Create templates/{businessType}/{TemplateName}/index.tsx
+//      (create the {businessType} folder if it does not exist yet)
 //   2. Import it here and add one entry to TEMPLATE_REGISTRY
-//   3. Nothing else changes
+//   3. Add a matching entry to clientLoaders.ts
+//   4. Nothing else changes — choose-theme + preview auto-filter by businessType
 
 import React from 'react';
 import { BusinessData, TemplateProps } from './types';
 import PlaceholderTemplate from './_placeholder';
-import CarDetailing from './CarDetailing';
-import CarDetailing3 from './CarDetailing3';
-import HairSalon from './HairSalon';
-import Landscaper1 from './Landscaper1';
-import Landscaper2 from './Landscaper2';
-import Landscaper3 from './Landscaper3';
-import Landscaper4 from './Landscaper4';
-import Landscaper5 from './Landscaper5';
-import Plumber1 from './Plumber1';
-import Plumber2 from './Plumber2';
-import Plumber3 from './Plumber3';
-import Electrician1 from './Electrician1';
-import Electrician2 from './Electrician2';
-import Electrician3 from './Electrician3';
+// ── car-detailer ────────────────────────────────────────────────────────────
+import CarDetailing  from './car-detailer/CarDetailing';
+import CarDetailing3 from './car-detailer/CarDetailing3';
+// ── electrician ─────────────────────────────────────────────────────────────
+import Electrician1 from './electrician/Electrician1';
+import Electrician2 from './electrician/Electrician2';
+import Electrician3 from './electrician/Electrician3';
+// ── hair-salon ──────────────────────────────────────────────────────────────
+import HairSalon from './hair-salon/HairSalon';
+// ── landscaper ──────────────────────────────────────────────────────────────
+import Landscaper1 from './landscaper/Landscaper1';
+import Landscaper2 from './landscaper/Landscaper2';
+import Landscaper3 from './landscaper/Landscaper3';
+import Landscaper4 from './landscaper/Landscaper4';
+import Landscaper5 from './landscaper/Landscaper5';
+// ── plumber ─────────────────────────────────────────────────────────────────
+import Plumber1 from './plumber/Plumber1';
+import Plumber2 from './plumber/Plumber2';
+import Plumber3 from './plumber/Plumber3';
 
 export interface TemplateColors {
   bg:     string;   // page background

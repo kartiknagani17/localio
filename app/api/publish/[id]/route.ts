@@ -51,8 +51,9 @@ export async function POST(
 ) {
   try {
     const { id } = params;
-    const body = await req.json().catch(() => ({})) as { subscriptionId?: string };
+    const body = await req.json().catch(() => ({})) as { subscriptionId?: string; userId?: string };
     const subscriptionId = typeof body.subscriptionId === 'string' ? body.subscriptionId.trim() : '';
+    const userId         = typeof body.userId         === 'string' ? body.userId.trim()         : null;
 
     if (!subscriptionId) {
       return NextResponse.json(
@@ -76,12 +77,16 @@ export async function POST(
 
     const supabase = createServerClient();
 
+    // Build the update payload — include user_id only when provided
+    const updatePayload: Record<string, unknown> = {
+      status: 'published',
+      payment_subscription_id: subscriptionId,
+    };
+    if (userId) updatePayload.user_id = userId;
+
     const { data: site, error } = await supabase
       .from('sites')
-      .update({
-        status: 'published',
-        payment_subscription_id: subscriptionId,
-      })
+      .update(updatePayload)
       .eq('id', id)
       .select('slug')
       .single();
