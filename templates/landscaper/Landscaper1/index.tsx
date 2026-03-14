@@ -381,10 +381,11 @@ export default function Landscaper1({ businessData, isPreview }: TemplateProps) 
   const scrollTo = (id: string) => { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); setMenuOpen(false); };
 
   useEffect(() => {
+    if (isPreview) { setScrolled(true); return; }
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [isPreview]);
 
   useEffect(() => {
     if (!menuOpen) return;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 interface HeroProps { onCTAClick: () => void; }
 
@@ -89,6 +90,7 @@ export default function Hero({ onCTAClick }: HeroProps) {
   const [openFaq,   setOpenFaq]    = useState<number | null>(null);
   const [scrolled,  setScrolled]   = useState(false);
   const [menuOpen,  setMenuOpen]   = useState(false);
+  const [userEmail, setUserEmail]  = useState<string | null>(null);
   const revealRefs = useRef<(HTMLElement | null)[]>([]);
 
   /* Close menu on Escape + lock body scroll */
@@ -114,6 +116,18 @@ export default function Hero({ onCTAClick }: HeroProps) {
     const fn = () => setScrolled(window.scrollY > 30);
     window.addEventListener('scroll', fn, { passive: true });
     return () => window.removeEventListener('scroll', fn);
+  }, []);
+
+  /* Auth state */
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data }) => {
+      setUserEmail(data.session?.user?.email ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user?.email ?? null);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   /* Scroll reveal */
@@ -157,6 +171,47 @@ export default function Hero({ onCTAClick }: HeroProps) {
               onMouseLeave={e => ((e.target as HTMLElement).style.color = 'rgba(255,255,255,0.65)')}>
               FAQ
             </a>
+            {/* Auth nav — desktop only */}
+            {userEmail ? (
+              <a href="/dashboard" className="hide-mobile" style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '6px 14px 6px 6px',
+                background: 'rgba(255,255,255,0.10)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                borderRadius: 999,
+                fontSize: 13, fontWeight: 600, color: '#fff',
+                textDecoration: 'none', transition: 'background 0.15s',
+              }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.20)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.10)'; }}>
+                <span style={{
+                  width: 26, height: 26, borderRadius: '50%',
+                  background: C.orange, color: '#fff',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 800, flexShrink: 0,
+                }}>
+                  {userEmail[0].toUpperCase()}
+                </span>
+                <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {userEmail.split('@')[0]}
+                </span>
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>·</span>
+                <span>Dashboard</span>
+              </a>
+            ) : (
+              <a href="/dashboard" className="hide-mobile" style={{
+                padding: '8px 16px',
+                background: 'rgba(255,255,255,0.10)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                borderRadius: 999,
+                fontSize: 13, fontWeight: 600, color: '#fff',
+                textDecoration: 'none', transition: 'background 0.15s',
+              }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.20)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.10)'; }}>
+                Log in
+              </a>
+            )}
             <button type="button" onClick={onCTAClick} className="btn-shimmer hide-mobile" style={{
               padding: '10px 22px', background: C.orange, color: '#fff',
               border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 14,
@@ -247,6 +302,7 @@ export default function Hero({ onCTAClick }: HeroProps) {
           opacity: menuOpen ? 1 : 0,
           transform: menuOpen ? 'translateY(0)' : 'translateY(16px)',
           transition: 'opacity 0.35s ease 0.22s, transform 0.35s ease 0.22s',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
         }}>
           <button
             type="button"
@@ -260,6 +316,31 @@ export default function Hero({ onCTAClick }: HeroProps) {
           >
             Build My Free Website →
           </button>
+          {/* Auth link — mobile only, inside the menu */}
+          <a
+            href="/dashboard"
+            onClick={() => setMenuOpen(false)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.6)',
+              textDecoration: 'none', transition: 'color 0.15s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#fff'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.6)'; }}
+          >
+            {userEmail ? (
+              <>
+                <span style={{
+                  width: 22, height: 22, borderRadius: '50%', background: C.orange,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: 800, color: '#fff', flexShrink: 0,
+                }}>
+                  {userEmail[0].toUpperCase()}
+                </span>
+                {userEmail.split('@')[0]} · Dashboard →
+              </>
+            ) : 'Already have an account? Log in →'}
+          </a>
         </div>
 
         {/* Divider line */}

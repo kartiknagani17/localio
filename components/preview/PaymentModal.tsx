@@ -10,19 +10,7 @@ type PayPalActions = {
   };
 };
 
-declare global {
-  interface Window {
-    paypal?: {
-      Buttons: (config: {
-        createSubscription: (data: unknown, actions: PayPalActions) => Promise<string>;
-        onApprove: (data: { subscriptionID: string }) => void;
-        onError: (err: unknown) => void;
-        onCancel: () => void;
-        style?: { shape?: string; color?: string };
-      }) => { render: (el: HTMLElement) => Promise<void> };
-    };
-  }
-}
+// window.paypal global type declared in PublishFlowDialog.tsx
 
 interface PaymentModalProps {
   isOpen: boolean;

@@ -48,6 +48,7 @@ export default async function PreviewPage({
         id:          t.id,
         name:        t.name,
         description: t.description,
+        colors:      t.colors,
       }))}
       initialTemplateName={template.name}
       initialData={site.business_data}

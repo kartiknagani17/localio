@@ -439,10 +439,11 @@ export default function HairSalonTemplate({ businessData }: TemplateProps) {
   const isTablet = cw < 1024;
 
   useEffect(() => {
+    if (isPreview) { setScrolled(true); return; }
     const fn = () => setScrolled(window.scrollY > 60);
     window.addEventListener('scroll', fn, { passive: true });
     return () => window.removeEventListener('scroll', fn);
-  }, []);
+  }, [isPreview]);
 
   const reviewsPerPage   = 3;
   const totalReviewPages = Math.max(1, Math.ceil(testimonials.length / reviewsPerPage));

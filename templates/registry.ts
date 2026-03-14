@@ -262,6 +262,9 @@ export function getTemplatesForBusinessType(businessData: BusinessData): Templat
 
   return TEMPLATE_REGISTRY.filter(t => {
     if (t.id === '_placeholder') return false;
+    // Only include templates whose bestFor list matches this business type
+    // (exact match, or one contains the other for partial variants like 'plumbing' vs 'plumbing_service')
+    if (t.bestFor.length > 0 && !t.bestFor.some(b => b === type || type.includes(b) || b.includes(type))) return false;
     if (t.notFor.includes(type)) return false;
     for (const field of t.requiredFields) {
       const val = businessData[field];

@@ -34,13 +34,14 @@ function getCopy(d: BusinessData): Required<SiteCopy> {
 }
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────
-function useNavScrolled() {
+function useNavScrolled(isPreview?: boolean) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
+    if (isPreview) { setScrolled(true); return; }
     const onScroll = () => setScrolled(window.scrollY > 60);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [isPreview]);
   return scrolled;
 }
 
@@ -133,7 +134,7 @@ const PARTICLE_CHARS = ['🍀', '🌿', '🍃', '🌱', '🌾', '🍂', '🌸'];
 
 export default function Landscaper4({ businessData: d, isPreview }: TemplateProps) {
   const copy = getCopy(d);
-  const navScrolled = useNavScrolled();
+  const navScrolled = useNavScrolled(isPreview);
   const [faqOpen, setFaqOpen]     = useState<number | null>(null);
   const [menuOpen, setMenuOpen]   = useState(false);
   const [statsRef, statsVisible] = useInView(0.3);

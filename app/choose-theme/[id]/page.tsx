@@ -28,18 +28,16 @@ export default async function ChooseThemePage({
 
   const available = getTemplatesForBusinessType(site.business_data);
 
-  // Fallback colors if a template hasn't been assigned colors yet
-  const fallbackColors = { bg: '#ffffff', nav: '#111111', accent: '#f97316', dark: false };
-
   return (
     <ChooseThemeClient
       siteId={site.id}
       recommendedId={site.template_id}
+      businessData={site.business_data}
       templates={available.map(t => ({
         id:          t.id,
         name:        t.name,
         description: t.description,
-        colors:      t.colors ?? fallbackColors,
+        colors:      t.colors,
       }))}
     />
   );

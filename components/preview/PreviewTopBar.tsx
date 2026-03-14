@@ -4,11 +4,13 @@ import Button from '@/components/ui/Button';
 import PublishFlowDialog from '@/components/preview/PublishFlowDialog';
 
 interface PreviewTopBarProps {
-  siteId:       string;
-  slug:         string;
-  status:       'preview' | 'published';
-  templateName: string;
-  businessName: string;
+  siteId:          string;
+  slug:            string;
+  status:          'preview' | 'published';
+  templateName:    string;
+  businessName:    string;
+  isPreviewMode:   boolean;
+  onTogglePreview: () => void;
 }
 
 export default function PreviewTopBar({
@@ -17,70 +19,199 @@ export default function PreviewTopBar({
   status,
   templateName,
   businessName,
+  isPreviewMode,
+  onTogglePreview,
 }: PreviewTopBarProps) {
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [publishedUrl, setPublishedUrl]           = useState<string | null>(null);
-  const [copySuccess, setCopySuccess]             = useState(false);
 
-  const domain = process.env.NEXT_PUBLIC_SITE_DOMAIN ?? 'localio.live';
-
+  const domain      = process.env.NEXT_PUBLIC_SITE_DOMAIN ?? 'localio.live';
   const isPublished = status === 'published' || !!publishedUrl;
+  const liveUrl     = publishedUrl ?? (status === 'published' ? `https://${domain}/${slug}` : null);
 
-  const resolvedPublishedUrl =
-    publishedUrl ?? (status === 'published' ? `https://${domain}/${slug}` : null);
-
-  const draftUrl  = `https://${domain}/d/${slug}`;
-  const activeUrl = resolvedPublishedUrl ?? draftUrl;
-  const urlDisplay = activeUrl.replace('https://', '');
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(activeUrl);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    } catch { /* ignore */ }
-  };
+  const F = "var(--font-jakarta, 'Plus Jakarta Sans', sans-serif)";
 
   return (
-    <header className="sticky top-0 z-40 flex items-center gap-4 px-4 py-3 bg-white border-b shadow-sm">
-      <span className="font-bold text-gray-800">Localio</span>
-      <span className="px-2 py-0.5 text-xs bg-gray-100 rounded">{templateName}</span>
+    <>
+      {/* ── Main top bar ───────────────────────────────────────────── */}
+      <header style={{
+        position:   'sticky',
+        top:        0,
+        zIndex:     40,
+        background: '#fff',
+        borderBottom: '1px solid #E5E7EB',
+        boxShadow:  '0 1px 4px rgba(0,0,0,0.06)',
+        height:     54,
+        display:    'flex',
+        alignItems: 'center',
+        padding:    '0 16px',
+        gap:        10,
+        fontFamily: F,
+        overflow:   'hidden',
+      }}>
 
-      <div className="flex-1" />
+        {/* ── NORMAL MODE ──────────────────────────────────────────── */}
+        {/* Brand + template name */}
+        <span style={{
+          fontWeight: 800, fontSize: 16, color: '#111',
+          letterSpacing: '-0.03em', flexShrink: 0,
+          opacity:    isPreviewMode ? 0 : 1,
+          transition: 'opacity 0.3s ease',
+          pointerEvents: isPreviewMode ? 'none' : 'auto',
+          position:   isPreviewMode ? 'absolute' : 'relative',
+        }}>
+          Localio
+        </span>
 
-      {/* URL display */}
-      <span className={`text-sm font-mono hidden sm:block ${isPublished ? 'text-green-600' : 'text-gray-400'}`}>
-        {!isPublished && (
-          <span className="mr-1 px-1 py-0.5 text-xs bg-amber-100 text-amber-700 rounded font-sans">Draft</span>
-        )}
-        {urlDisplay}
-      </span>
+        <span style={{
+          padding:    '3px 9px',
+          background: '#F3F4F6',
+          borderRadius: 8,
+          fontSize:   12,
+          color:      '#6B7280',
+          fontWeight: 500,
+          flexShrink: 0,
+          opacity:    isPreviewMode ? 0 : 1,
+          transition: 'opacity 0.3s ease 0.05s',
+          pointerEvents: isPreviewMode ? 'none' : 'auto',
+          position:   isPreviewMode ? 'absolute' : 'relative',
+        }}>
+          {templateName}
+        </span>
 
-      {/* Open in new tab */}
-      <a
-        href={activeUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`text-sm hover:underline hidden sm:block ${isPublished ? 'text-green-600' : 'text-gray-400'}`}
-      >
-        Open ↗
-      </a>
+        <div style={{ flex: 1 }} />
 
-      {/* Copy URL */}
-      <Button variant="secondary" onClick={handleCopy}>
-        {copySuccess ? 'Copied!' : 'Copy URL'}
-      </Button>
+        {/* Status URL pill */}
+        <span style={{
+          fontSize: 12, fontFamily: 'monospace',
+          display: 'none',  /* shown via @media below */
+          opacity:    isPreviewMode ? 0 : 1,
+          transition: 'opacity 0.3s ease',
+          pointerEvents: isPreviewMode ? 'none' : 'auto',
+        }} className="preview-url-pill">
+          {!isPublished && (
+            <span style={{
+              marginRight: 5, padding: '2px 6px',
+              background: '#FEF3C7', color: '#92400E',
+              borderRadius: 6, fontSize: 10, fontWeight: 700,
+            }}>
+              Draft
+            </span>
+          )}
+          <span style={{ color: isPublished ? '#16A34A' : '#9CA3AF' }}>
+            {isPublished && liveUrl ? liveUrl.replace('https://', '') : `draft — localio.live/${slug}`}
+          </span>
+        </span>
 
-      {/* Publish button */}
-      <Button
-        onClick={() => { if (!isPublished) setShowPublishDialog(true); }}
-        disabled={isPublished}
-        className={isPublished ? '!bg-green-500 hover:!bg-green-500 cursor-default' : ''}
-      >
-        {isPublished ? '✓ Published' : 'Publish'}
-      </Button>
+        {/* Preview button */}
+        <button
+          onClick={onTogglePreview}
+          title="Preview as visitor"
+          style={{
+            display:    'flex',
+            alignItems: 'center',
+            gap:        6,
+            padding:    '7px 14px',
+            background: isPreviewMode ? 'transparent' : '#F3F4F6',
+            border:     isPreviewMode ? 'none' : '1px solid #E5E7EB',
+            borderRadius: 10,
+            fontSize:   13,
+            fontWeight: 600,
+            color:      isPreviewMode ? 'transparent' : '#374151',
+            cursor:     'pointer',
+            fontFamily: F,
+            transition: 'all 0.25s ease',
+            pointerEvents: isPreviewMode ? 'none' : 'auto',
+            flexShrink: 0,
+          }}
+          onMouseEnter={(e) => {
+            if (!isPreviewMode) (e.currentTarget as HTMLButtonElement).style.background = '#E5E7EB';
+          }}
+          onMouseLeave={(e) => {
+            if (!isPreviewMode) (e.currentTarget as HTMLButtonElement).style.background = '#F3F4F6';
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          Preview
+        </button>
 
-      {/* Full publish flow: auth → confirm → PayPal → success */}
+        {/* Publish button */}
+        <Button
+          onClick={() => { if (!isPublished) setShowPublishDialog(true); }}
+          disabled={isPublished}
+          style={{
+            flexShrink:    0,
+            opacity:       isPreviewMode ? 0 : 1,
+            transition:    'opacity 0.25s ease',
+            pointerEvents: isPreviewMode ? 'none' : 'auto',
+            ...(isPublished ? { background: '#22C55E' } : {}),
+          }}
+        >
+          {isPublished ? '✓ Published' : 'Publish'}
+        </Button>
+
+        {/* ── PREVIEW MODE: Exit bar content ───────────────────────── */}
+        {/* Absolute-positioned strip that fades in on top */}
+        <div style={{
+          position:   'absolute',
+          inset:      0,
+          display:    'flex',
+          alignItems: 'center',
+          padding:    '0 16px',
+          gap:        12,
+          opacity:    isPreviewMode ? 1 : 0,
+          pointerEvents: isPreviewMode ? 'auto' : 'none',
+          transition: 'opacity 0.3s ease',
+        }}>
+          {/* Exit preview */}
+          <button
+            onClick={onTogglePreview}
+            style={{
+              display:    'flex',
+              alignItems: 'center',
+              gap:        6,
+              padding:    '7px 16px',
+              background: '#111',
+              color:      '#fff',
+              border:     'none',
+              borderRadius: 10,
+              fontSize:   13,
+              fontWeight: 700,
+              cursor:     'pointer',
+              fontFamily: F,
+              transition: 'background 0.15s',
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#333'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#111'; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Exit Preview
+          </button>
+
+          <span style={{ fontSize: 13, color: '#9CA3AF', fontStyle: 'italic' }}>
+            Previewing as a visitor — {businessName}
+          </span>
+
+          <div style={{ flex: 1 }} />
+
+          {/* Publish button stays visible in preview mode too */}
+          <Button
+            onClick={() => { if (!isPublished) setShowPublishDialog(true); }}
+            disabled={isPublished}
+            style={{ flexShrink: 0, ...(isPublished ? { background: '#22C55E' } : {}) }}
+          >
+            {isPublished ? '✓ Published' : 'Publish'}
+          </Button>
+        </div>
+      </header>
+
+      {/* Publish dialog */}
       <PublishFlowDialog
         isOpen={showPublishDialog}
         onClose={() => setShowPublishDialog(false)}
@@ -89,9 +220,14 @@ export default function PreviewTopBar({
         slug={slug}
         onPublished={(url) => {
           setPublishedUrl(url);
-          // dialog closes itself on success via "Back to editor" button
         }}
       />
-    </header>
+
+      <style>{`
+        @media (min-width: 600px) {
+          .preview-url-pill { display: inline-flex !important; align-items: center; }
+        }
+      `}</style>
+    </>
   );
 }

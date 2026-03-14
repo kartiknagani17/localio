@@ -488,10 +488,11 @@ export default function CarDetailingTemplate({ businessData, isPreview }: Templa
   const isTablet = cw < 1024;
 
   useEffect(() => {
+    if (isPreview) { setScrolled(true); return; }
     const fn = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', fn, { passive: true });
     return () => window.removeEventListener('scroll', fn);
-  }, []);
+  }, [isPreview]);
 
   useEffect(() => { setGalleryIdx(0); }, [gallery.length]);
 
