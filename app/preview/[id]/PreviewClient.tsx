@@ -357,7 +357,20 @@ export default function PreviewClient({
   initialData,
   initialTemplateComponent,
 }: PreviewClientProps) {
-  const { data, update, isSaving, lastSaved, saveError } = useBusinessData(siteId, initialData);
+  const { data, update, flush, isSaving, lastSaved, saveError } = useBusinessData(siteId, initialData);
+
+  // Track whether the user has made unsaved/unpublished changes this session
+  const [hasMadeChanges, setHasMadeChanges] = useState(false);
+
+  const trackedUpdate = useCallback((patch: Parameters<typeof update>[0]) => {
+    setHasMadeChanges(true);
+    update(patch);
+  }, [update]);
+
+  const handlePublishChanges = useCallback(async () => {
+    await flush();
+    setHasMadeChanges(false);
+  }, [flush]);
 
   // Active template (in-use for the live preview pane)
   const [templateId, setTemplateId]         = useState(currentTemplateId);
@@ -431,6 +444,7 @@ export default function PreviewClient({
     setPreviewingId(null);
     if (id === templateId) return;
     setTemplateId(id);
+    setHasMadeChanges(true);
     setTemplateSaveError(null);
     if (id === currentTemplateId) return;
     fetch(`/api/update/${siteId}`, {
@@ -524,7 +538,7 @@ export default function PreviewClient({
         : loadedTemplates[previewingId] ?? null)
     : null;
 
-  const dashboardProps = { siteId, data, update, isSaving, lastSaved, saveError };
+  const dashboardProps = { siteId, data, update: trackedUpdate, isSaving, lastSaved, saveError };
 
   return (
     <>
@@ -590,7 +604,10 @@ export default function PreviewClient({
             templateName={displayTemplateName}
             businessName={data.name}
             isPreviewMode={isPreviewMode}
+            hasMadeChanges={hasMadeChanges}
+            isSaving={isSaving}
             onTogglePreview={() => setIsPreviewMode(m => !m)}
+            onPublishChanges={handlePublishChanges}
           />
         </div>
 

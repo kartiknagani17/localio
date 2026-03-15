@@ -6,6 +6,7 @@ import { BusinessData, BusinessDataPatch } from '@/templates/types';
 export interface UseBusinessDataReturn {
   data: BusinessData;
   update: (patch: BusinessDataPatch) => void;
+  flush: () => Promise<void>;
   isSaving: boolean;
   lastSaved: Date | null;
   saveError: string | null;
@@ -62,5 +63,5 @@ export function useBusinessData(
     flush();
   }, [flush]);
 
-  return { data, update, isSaving, lastSaved, saveError };
+  return { data, update, flush, isSaving, lastSaved, saveError };
 }
