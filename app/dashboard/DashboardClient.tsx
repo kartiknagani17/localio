@@ -228,7 +228,7 @@ export default function DashboardClient({ userEmail, sites: initialSites }: Dash
           businessName={domainSite.business_data.name}
           slug={domainSite.slug}
           currentDomain={domainSite.custom_domain}
-          onOpenPublish={() => { setDomainSite(null); setPublishingSite(domainSite); }}
+          onPublished={() => { if (domainSite) handlePublished(domainSite.id); }}
           onDomainSaved={(domain) => handleDomainSaved(domainSite.id, domain)}
         />
       )}
