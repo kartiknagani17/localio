@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import PublishFlowDialog from '@/components/preview/PublishFlowDialog';
+import CustomDomainDialog from '@/components/dashboard/CustomDomainDialog';
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 interface SiteRow {
@@ -12,6 +13,7 @@ interface SiteRow {
   template_id:   string;
   status:        'preview' | 'published';
   created_at:    string;
+  custom_domain: string | null;
   business_data: {
     name:         string;
     businessType: string;
@@ -42,8 +44,9 @@ function humanType(raw: string) {
 /* ── Component ─────────────────────────────────────────────────────────── */
 export default function DashboardClient({ userEmail, sites: initialSites }: DashboardClientProps) {
   const router = useRouter();
-  const [sites, setSites]               = useState<SiteRow[]>(initialSites);
+  const [sites, setSites]                   = useState<SiteRow[]>(initialSites);
   const [publishingSite, setPublishingSite] = useState<SiteRow | null>(null);
+  const [domainSite, setDomainSite]         = useState<SiteRow | null>(null);
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -52,14 +55,21 @@ export default function DashboardClient({ userEmail, sites: initialSites }: Dash
   };
 
   const handlePublished = (siteId: string) => {
-    // Optimistically update the card to published
     setSites((prev) =>
       prev.map((s) => s.id === siteId ? { ...s, status: 'published' } : s)
     );
     setPublishingSite(null);
   };
 
-  /* ── Styles ─────────────────────────────────────────────────────────── */
+  const handleDomainSaved = (siteId: string, domain: string | null) => {
+    setSites((prev) =>
+      prev.map((s) => s.id === siteId ? { ...s, custom_domain: domain } : s)
+    );
+    if (domainSite?.id === siteId) {
+      setDomainSite((d) => d ? { ...d, custom_domain: domain } : null);
+    }
+  };
+
   const F = "var(--font-jakarta, 'Plus Jakarta Sans', sans-serif)";
 
   return (
@@ -189,13 +199,14 @@ export default function DashboardClient({ userEmail, sites: initialSites }: Dash
                 key={site.id}
                 site={site}
                 onGoLive={() => setPublishingSite(site)}
+                onAddDomain={() => setDomainSite(site)}
               />
             ))}
           </div>
         )}
       </main>
 
-      {/* ── Inline publish flow dialog ────────────────────────────── */}
+      {/* ── Publish flow dialog ───────────────────────────────────── */}
       {publishingSite && (
         <PublishFlowDialog
           isOpen={!!publishingSite}
@@ -206,12 +217,35 @@ export default function DashboardClient({ userEmail, sites: initialSites }: Dash
           onPublished={() => handlePublished(publishingSite.id)}
         />
       )}
+
+      {/* ── Custom domain dialog ──────────────────────────────────── */}
+      {domainSite && (
+        <CustomDomainDialog
+          isOpen={!!domainSite}
+          onClose={() => setDomainSite(null)}
+          isPublished={domainSite.status === 'published'}
+          siteId={domainSite.id}
+          businessName={domainSite.business_data.name}
+          slug={domainSite.slug}
+          currentDomain={domainSite.custom_domain}
+          onOpenPublish={() => { setDomainSite(null); setPublishingSite(domainSite); }}
+          onDomainSaved={(domain) => handleDomainSaved(domainSite.id, domain)}
+        />
+      )}
     </div>
   );
 }
 
 /* ── Site card ──────────────────────────────────────────────────────────── */
-function SiteCard({ site, onGoLive }: { site: SiteRow; onGoLive: () => void }) {
+function SiteCard({
+  site,
+  onGoLive,
+  onAddDomain,
+}: {
+  site:        SiteRow;
+  onGoLive:    () => void;
+  onAddDomain: () => void;
+}) {
   const isPublished  = site.status === 'published';
   const liveUrl      = `https://${DOMAIN}/${site.slug}`;
   const previewUrl   = `/preview/${site.id}`;
@@ -252,40 +286,40 @@ function SiteCard({ site, onGoLive }: { site: SiteRow; onGoLive: () => void }) {
       {/* Card body */}
       <div style={{ padding: '20px 20px 16px', flex: 1, position: 'relative' }}>
 
-        {/* Status badge row + 3-dot menu (live sites only) */}
+        {/* Status badge row + 3-dot menu */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div>
-          {isPublished ? (
-            <span style={{
-              display:      'inline-flex',
-              alignItems:   'center',
-              gap:          5,
-              padding:      '4px 10px',
-              background:   '#DCFCE7',
-              color:        '#15803D',
-              borderRadius: 999,
-              fontSize:     12,
-              fontWeight:   700,
-            }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Live
-            </span>
-          ) : (
-            <span style={{
-              display:      'inline-flex',
-              alignItems:   'center',
-              gap:          5,
-              padding:      '4px 10px',
-              background:   '#FEF3C7',
-              color:        '#92400E',
-              borderRadius: 999,
-              fontSize:     12,
-              fontWeight:   700,
-            }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              Draft
-            </span>
-          )}
+            {isPublished ? (
+              <span style={{
+                display:      'inline-flex',
+                alignItems:   'center',
+                gap:          5,
+                padding:      '4px 10px',
+                background:   '#DCFCE7',
+                color:        '#15803D',
+                borderRadius: 999,
+                fontSize:     12,
+                fontWeight:   700,
+              }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Live
+              </span>
+            ) : (
+              <span style={{
+                display:      'inline-flex',
+                alignItems:   'center',
+                gap:          5,
+                padding:      '4px 10px',
+                background:   '#FEF3C7',
+                color:        '#92400E',
+                borderRadius: 999,
+                fontSize:     12,
+                fontWeight:   700,
+              }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Draft
+              </span>
+            )}
           </div>
 
           {/* 3-dot menu — live sites only */}
@@ -309,14 +343,9 @@ function SiteCard({ site, onGoLive }: { site: SiteRow; onGoLive: () => void }) {
                 </svg>
               </button>
 
-              {/* Dropdown */}
               {menuOpen && (
                 <>
-                  {/* Click-away backdrop */}
-                  <div
-                    style={{ position: 'fixed', inset: 0, zIndex: 10 }}
-                    onClick={() => setMenuOpen(false)}
-                  />
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setMenuOpen(false)} />
                   <div style={{
                     position: 'absolute', top: 36, right: 0, zIndex: 20,
                     background: '#fff', borderRadius: 12,
@@ -385,9 +414,32 @@ function SiteCard({ site, onGoLive }: { site: SiteRow; onGoLive: () => void }) {
         </p>
 
         {/* Date */}
-        <p style={{ margin: 0, fontSize: 12, color: '#9CA3AF' }}>
+        <p style={{ margin: '0 0 0', fontSize: 12, color: '#9CA3AF' }}>
           Created {formatDate(site.created_at)}
         </p>
+
+        {/* Custom domain chip (if set) */}
+        {site.custom_domain && (
+          <div style={{
+            display:    'inline-flex',
+            alignItems: 'center',
+            gap:        5,
+            marginTop:  10,
+            padding:    '4px 10px',
+            background: '#EFF6FF',
+            borderRadius: 999,
+            fontSize:   11,
+            fontWeight: 600,
+            color:      '#1D4ED8',
+          }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            {site.custom_domain}
+          </div>
+        )}
       </div>
 
       {/* Card actions */}
@@ -395,106 +447,146 @@ function SiteCard({ site, onGoLive }: { site: SiteRow; onGoLive: () => void }) {
         padding:    '14px 20px',
         borderTop:  '1px solid #F3F4F6',
         display:    'flex',
+        flexDirection: 'column',
         gap:        8,
-        alignItems: 'center',
-        flexWrap:   'wrap',
       }}>
 
-        {/* Edit — always shown */}
-        <a
-          href={previewUrl}
+        {/* Top row: Edit + View/GoLive */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {/* Edit */}
+          <a
+            href={previewUrl}
+            style={{
+              flex:           '1 1 auto',
+              display:        'inline-flex',
+              alignItems:     'center',
+              justifyContent: 'center',
+              gap:            6,
+              padding:        '8px 14px',
+              background:     '#F5F5F3',
+              border:         'none',
+              borderRadius:   10,
+              fontSize:       13,
+              fontWeight:     600,
+              color:          '#374151',
+              textDecoration: 'none',
+              transition:     'background 0.15s',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#EBEBEB'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#F5F5F3'; }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Edit
+          </a>
+
+          {/* View site — published only */}
+          {isPublished && (
+            <a
+              href={liveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                flex:           '1 1 auto',
+                display:        'inline-flex',
+                alignItems:     'center',
+                justifyContent: 'center',
+                gap:            6,
+                padding:        '8px 14px',
+                background:     '#111',
+                border:         'none',
+                borderRadius:   10,
+                fontSize:       13,
+                fontWeight:     600,
+                color:          '#fff',
+                textDecoration: 'none',
+                transition:     'background 0.15s',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#333'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#111'; }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              View site
+            </a>
+          )}
+
+          {/* Go Live — draft only */}
+          {!isPublished && (
+            <button
+              onClick={onGoLive}
+              style={{
+                flex:           '1 1 auto',
+                display:        'inline-flex',
+                alignItems:     'center',
+                justifyContent: 'center',
+                gap:            6,
+                padding:        '8px 14px',
+                background:     'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
+                border:         'none',
+                borderRadius:   10,
+                fontSize:       13,
+                fontWeight:     700,
+                color:          '#fff',
+                cursor:         'pointer',
+                fontFamily:     F,
+                transition:     'opacity 0.15s',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.88'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <polyline points="13 17 18 12 13 7"/>
+                <polyline points="6 17 11 12 6 7"/>
+              </svg>
+              Go Live
+            </button>
+          )}
+        </div>
+
+        {/* Custom domain button — full width, second row */}
+        <button
+          onClick={onAddDomain}
           style={{
-            flex:           '1 1 auto',
+            width:          '100%',
             display:        'inline-flex',
             alignItems:     'center',
             justifyContent: 'center',
             gap:            6,
             padding:        '8px 14px',
-            background:     '#F5F5F3',
-            border:         'none',
+            background:     isPublished && site.custom_domain ? '#EFF6FF' : '#F5F5F3',
+            border:         isPublished && site.custom_domain ? '1px solid #BFDBFE' : '1px dashed #D1D5DB',
             borderRadius:   10,
-            fontSize:       13,
+            fontSize:       12,
             fontWeight:     600,
-            color:          '#374151',
-            textDecoration: 'none',
-            transition:     'background 0.15s',
+            color:          isPublished && site.custom_domain ? '#1D4ED8' : '#6B7280',
+            cursor:         'pointer',
+            fontFamily:     F,
+            transition:     'all 0.15s',
           }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#EBEBEB'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#F5F5F3'; }}
+          onMouseEnter={(e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            btn.style.background = isPublished && site.custom_domain ? '#DBEAFE' : '#EBEBEB';
+            btn.style.borderColor = isPublished && site.custom_domain ? '#93C5FD' : '#9CA3AF';
+          }}
+          onMouseLeave={(e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            btn.style.background = isPublished && site.custom_domain ? '#EFF6FF' : '#F5F5F3';
+            btn.style.borderColor = isPublished && site.custom_domain ? '#BFDBFE' : '#D1D5DB';
+          }}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
           </svg>
-          Edit
-        </a>
-
-        {/* View site — published only */}
-        {isPublished && (
-          <a
-            href={liveUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              flex:           '1 1 auto',
-              display:        'inline-flex',
-              alignItems:     'center',
-              justifyContent: 'center',
-              gap:            6,
-              padding:        '8px 14px',
-              background:     '#111',
-              border:         'none',
-              borderRadius:   10,
-              fontSize:       13,
-              fontWeight:     600,
-              color:          '#fff',
-              textDecoration: 'none',
-              transition:     'background 0.15s',
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#333'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#111'; }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-            View site
-          </a>
-        )}
-
-        {/* Go Live — draft only */}
-        {!isPublished && (
-          <button
-            onClick={onGoLive}
-            style={{
-              flex:           '1 1 auto',
-              display:        'inline-flex',
-              alignItems:     'center',
-              justifyContent: 'center',
-              gap:            6,
-              padding:        '8px 14px',
-              background:     'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
-              border:         'none',
-              borderRadius:   10,
-              fontSize:       13,
-              fontWeight:     700,
-              color:          '#fff',
-              cursor:         'pointer',
-              fontFamily:     F,
-              transition:     'opacity 0.15s',
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.88'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
-            title="Publish this site live"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <polyline points="13 17 18 12 13 7"/>
-              <polyline points="6 17 11 12 6 7"/>
-            </svg>
-            Go Live
-          </button>
-        )}
+          {site.custom_domain ? site.custom_domain : 'Add custom domain'}
+        </button>
       </div>
     </article>
   );

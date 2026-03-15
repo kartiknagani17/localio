@@ -74,6 +74,12 @@ export default function PublishFlowDialog({
   const containerRef                     = useRef<HTMLDivElement>(null);
   const buttonsRendered                  = useRef(false);
 
+  // Draft saving
+  const [draftLoading, setDraftLoading] = useState(false);
+
+  // Auth check done (prevents flash of auth step when already logged in)
+  const [authChecked, setAuthChecked]   = useState(false);
+
   // Copy / Share
   const [copied, setCopied]             = useState(false);
 
@@ -91,6 +97,7 @@ export default function PublishFlowDialog({
   /* ── Check if already logged in when dialog opens ───────────────────── */
   useEffect(() => {
     if (!isOpen) return;
+    setAuthChecked(false);
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
@@ -99,6 +106,7 @@ export default function PublishFlowDialog({
       } else {
         setStep('auth');
       }
+      setAuthChecked(true);
     });
   }, [isOpen]);
 
@@ -115,6 +123,8 @@ export default function PublishFlowDialog({
       setCopied(false);
       setSdkReady(false);
       setSelectedPlan(null);
+      setDraftLoading(false);
+      setAuthChecked(false);
       buttonsRendered.current = false;
     }
   }, [isOpen]);
@@ -254,6 +264,7 @@ export default function PublishFlowDialog({
 
   /* ── Save as draft: claim site for user + go to dashboard ───────────── */
   const handleSaveAsDraft = useCallback(async () => {
+    setDraftLoading(true);
     if (userId) {
       try {
         await fetch(`/api/claim/${siteId}`, { method: 'POST' });
@@ -284,8 +295,23 @@ export default function PublishFlowDialog({
     >
       <div style={{ fontFamily: F }}>
 
+        {/* ── Auth check spinner (prevents flash of auth form if already logged in) */}
+        {!authChecked && isOpen && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 10, padding: '48px 0', color: '#6B7280', fontSize: 14,
+          }}>
+            <span style={{
+              display: 'inline-block', width: 22, height: 22,
+              border: '2.5px solid #4F46E5', borderTopColor: 'transparent',
+              borderRadius: '50%', animation: 'spin 0.7s linear infinite',
+            }} />
+            Loading…
+          </div>
+        )}
+
         {/* ── STEP: AUTH ──────────────────────────────────────────────── */}
-        {step === 'auth' && (
+        {authChecked && step === 'auth' && (
           <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             <div style={{
@@ -374,7 +400,7 @@ export default function PublishFlowDialog({
         )}
 
         {/* ── STEP: PLANS ─────────────────────────────────────────────── */}
-        {step === 'plans' && (
+        {authChecked && step === 'plans' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             <p style={{ margin: 0, fontSize: 14, color: '#6B7280', lineHeight: 1.6 }}>
@@ -399,6 +425,7 @@ export default function PublishFlowDialog({
                 price="$47"
                 priceSub="per year"
                 then="billed once a year"
+                savings="Save $13 vs monthly"
                 onSelect={() => handleChoosePlan('yearly')}
               />
             </div>
@@ -406,22 +433,34 @@ export default function PublishFlowDialog({
             <div style={{ textAlign: 'center', paddingTop: 8, borderTop: '1px solid #F3F4F6' }}>
               <button
                 onClick={handleSaveAsDraft}
+                disabled={draftLoading}
                 style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  fontSize: 12, color: '#9CA3AF', transition: 'color 0.15s',
+                  background: 'none', border: 'none',
+                  cursor: draftLoading ? 'default' : 'pointer',
+                  fontSize: 12, color: '#4B5563', transition: 'color 0.15s',
                   fontFamily: F, padding: 0,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  opacity: draftLoading ? 0.7 : 1,
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#6B7280'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF'; }}
+                onMouseEnter={(e) => { if (!draftLoading) (e.currentTarget as HTMLButtonElement).style.color = '#111827'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#4B5563'; }}
               >
-                Save as draft — go to dashboard
+                {draftLoading && (
+                  <span style={{
+                    display: 'inline-block', width: 11, height: 11,
+                    border: '1.5px solid #4B5563', borderTopColor: 'transparent',
+                    borderRadius: '50%', animation: 'spin 0.7s linear infinite',
+                    flexShrink: 0,
+                  }} />
+                )}
+                {draftLoading ? 'Saving draft…' : 'Save as draft — go to dashboard'}
               </button>
             </div>
           </div>
         )}
 
         {/* ── STEP: PAYMENT ───────────────────────────────────────────── */}
-        {step === 'payment' && (
+        {authChecked && step === 'payment' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {/* Selected plan recap */}
@@ -595,6 +634,7 @@ function PlanCard({
   price,
   priceSub,
   then,
+  savings,
   onSelect,
 }: {
   label:    string;
@@ -602,6 +642,7 @@ function PlanCard({
   price:    string;
   priceSub: string;
   then:     string;
+  savings?: string | null;
   onSelect: () => void;
 }) {
   const F = "var(--font-jakarta, 'Plus Jakarta Sans', sans-serif)";
@@ -639,7 +680,7 @@ function PlanCard({
       )}
 
       {/* Label */}
-      <div style={{ fontSize: 13, fontWeight: 600, color: '#6B7280', fontFamily: F }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', fontFamily: F }}>
         {label}
       </div>
 
@@ -648,14 +689,33 @@ function PlanCard({
         <span style={{ fontSize: 32, fontWeight: 800, color: '#111', letterSpacing: '-0.04em', fontFamily: F }}>
           {price}
         </span>
-        <span style={{ fontSize: 12, color: '#9CA3AF', marginLeft: 4, fontFamily: F }}>
+        <span style={{ fontSize: 12, color: '#4B5563', marginLeft: 4, fontFamily: F }}>
           {priceSub}
         </span>
       </div>
 
       {/* Then */}
-      <div style={{ fontSize: 12, color: '#9CA3AF', fontFamily: F, flex: 1 }}>
+      <div style={{ fontSize: 12, color: '#4B5563', fontFamily: F }}>
         {then}
+      </div>
+
+      {/* Savings tag */}
+      {savings && (
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          padding: '3px 8px', background: '#DCFCE7',
+          borderRadius: 6, fontSize: 11, fontWeight: 700, color: '#15803D',
+          width: 'fit-content',
+        }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          {savings}
+        </div>
+      )}
+
+      {/* Features */}
+      <div style={{ fontSize: 11, color: '#6B7280', fontFamily: F, display: 'flex', alignItems: 'center', gap: 5 }}>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Custom domain included
       </div>
 
       {/* CTA */}

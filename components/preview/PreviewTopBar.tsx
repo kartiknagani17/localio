@@ -51,33 +51,36 @@ export default function PreviewTopBar({
       }}>
 
         {/* ── NORMAL MODE ──────────────────────────────────────────── */}
-        {/* Brand + template name */}
-        <span style={{
-          fontWeight: 800, fontSize: 16, color: '#111',
-          letterSpacing: '-0.03em', flexShrink: 0,
-          opacity:    isPreviewMode ? 0 : 1,
-          transition: 'opacity 0.3s ease',
-          pointerEvents: isPreviewMode ? 'none' : 'auto',
-          position:   isPreviewMode ? 'absolute' : 'relative',
-        }}>
-          Localio
-        </span>
-
-        <span style={{
-          padding:    '3px 9px',
-          background: '#F3F4F6',
-          borderRadius: 8,
-          fontSize:   12,
-          color:      '#6B7280',
-          fontWeight: 500,
-          flexShrink: 0,
-          opacity:    isPreviewMode ? 0 : 1,
-          transition: 'opacity 0.3s ease 0.05s',
-          pointerEvents: isPreviewMode ? 'none' : 'auto',
-          position:   isPreviewMode ? 'absolute' : 'relative',
-        }}>
-          {templateName}
-        </span>
+        {/* Dashboard button */}
+        <a
+          href="/dashboard"
+          style={{
+            display:        'inline-flex',
+            alignItems:     'center',
+            gap:            6,
+            padding:        '7px 14px',
+            background:     '#F3F4F6',
+            border:         '1px solid #E5E7EB',
+            borderRadius:   10,
+            fontSize:       13,
+            fontWeight:     600,
+            color:          '#374151',
+            textDecoration: 'none',
+            flexShrink:     0,
+            opacity:        isPreviewMode ? 0 : 1,
+            transition:     'all 0.25s ease',
+            pointerEvents:  isPreviewMode ? 'none' : 'auto',
+            position:       isPreviewMode ? 'absolute' : 'relative',
+            fontFamily:     F,
+          }}
+          onMouseEnter={(e) => { if (!isPreviewMode) (e.currentTarget as HTMLAnchorElement).style.background = '#E5E7EB'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3F4F6'; }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Dashboard
+        </a>
 
         <div style={{ flex: 1 }} />
 

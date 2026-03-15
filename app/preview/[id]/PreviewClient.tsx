@@ -102,9 +102,11 @@ function ThemeCard({
   const c = template.colors;
   const Comp = component;
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
       title={template.description ?? template.name}
       style={{
         flexShrink:    0,
@@ -119,8 +121,8 @@ function ThemeCard({
         cursor:        'pointer',
         transition:    'all 0.15s',
       }}
-      onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = '#F3F4F6'; }}
-      onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = active ? '#EEF2FF' : 'transparent'; }}
+      onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLDivElement).style.background = '#F3F4F6'; }}
+      onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLDivElement).style.background = active ? '#EEF2FF' : 'transparent'; }}
     >
       {/* Thumbnail */}
       <div style={{
@@ -168,7 +170,7 @@ function ThemeCard({
       }}>
         {template.name}
       </span>
-    </button>
+    </div>
   );
 }
 
@@ -627,7 +629,7 @@ export default function PreviewClient({
                 key={t.id}
                 template={t}
                 active={t.id === templateId}
-                onClick={() => openPreview(t.id)}
+                onClick={() => handleSelectTemplate(t.id)}
                 component={
                   t.id === currentTemplateId
                     ? initialTemplateComponent

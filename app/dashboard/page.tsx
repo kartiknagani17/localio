@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   const supabase = createServerClient();
   const { data: sites } = await supabase
     .from('sites')
-    .select('id, slug, template_id, business_data, status, created_at')
+    .select('id, slug, template_id, business_data, status, created_at, custom_domain')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
