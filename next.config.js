@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Prevent webpack from trying to bundle these Node.js-only packages in the RSC layer
-  serverExternalPackages: ['@supabase/supabase-js'],
+  experimental: {
+    // Prevent webpack from bundling this in the RSC layer (fixes 500 in /api/publish)
+    serverComponentsExternalPackages: ['@supabase/supabase-js'],
+  },
 };
 
 module.exports = nextConfig;
